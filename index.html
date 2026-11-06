@@ -33,7 +33,7 @@
 </div>
 <div class="shell"><aside><h2>Question navigator</h2><div id="navigator" class="grid" aria-label="Choose a question"></div><div class="legend"><span>Blue</span> Answered<br>⚑ Marked for review<br>Outline = current question</div><div class="count" id="count"></div><button style="margin-top:12px;width:100%" onclick="review()">Review answers</button></aside>
 <main><div class="qtop"><strong id="position"></strong><button id="flag" onclick="toggleFlag()" aria-pressed="false">⚑ Mark for review</button></div><div id="content" class="content"></div><div class="navigation"><button id="back" onclick="go(current-1)">← Back</button><div class="navright"><button onclick="review()">Review</button><button id="next" class="primary" onclick="go(current+1)">Next →</button></div></div></main></div>
-<footer>Practice at your own pace. Use scratch paper to show your work. <span id="saveStatus"></span></footer>
+<footer>Practice at your own pace. Use scratch paper to show your work. <span id="saveStatus"></span><br><span id="syncStatus" role="status" aria-live="polite"></span> <button id="retrySync" onclick="retryTeacherSync()" hidden>Retry sending</button></footer>
 </div>
 <dialog id="modal"><div id="modalContent"></div></dialog>
 <script>
@@ -67,11 +67,17 @@ const Q=[
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let annotations=Array.from({length:25},()=>[]),activeTool='select',liveStroke=null;
 const classNames=['Presnell’s Powerhouses','Hudgins’ Heroes','Clark’s Crew'];
+// Add the teacher's deployed Google Apps Script Web app URL here after setup.
+const GOOGLE_SHEETS_URL = '';
+const LIVE_SITE = 'https://aliciahudgins-ux.github.io/practiceA/';
+const outboxKey='math-practice-6279743-live-outbox-v2';
+let attemptId=newAttemptId(),syncRevision=0,syncedRevision=0,liveSignature='',syncOutbox=[],syncTimer=null,syncFlight=null,syncError=false;
+try{const pending=JSON.parse(localStorage.getItem(outboxKey)||'[]');if(Array.isArray(pending))syncOutbox=pending}catch(e){}
 let student={name:'',className:''},sessionStarted=false;
 let current=0,answers=Q.map(q=>q.type==='match'?['','','','']:q.type==='number'?'':[]),flags=Array(25).fill(false),crossed=Q.map(()=>[]),submitted=false,storage=true;
 const storageKey='math-practice-6279743-v1';
-try{const x=JSON.parse(localStorage.getItem(storageKey)||'null');if(x&&x.answers?.length===25&&x.flags?.length===25){if(x.student&&typeof x.student.name==='string'&&classNames.includes(x.student.className))student={name:x.student.name.slice(0,80),className:x.student.className};answers=x.answers;flags=x.flags;crossed=x.crossed||crossed;submitted=!!x.submitted;if(Array.isArray(x.annotations)&&x.annotations.length===25)annotations=x.annotations;current=Math.max(0,Math.min(24,x.current||0))}}catch(e){storage=false}
-function save(){try{localStorage.setItem(storageKey,JSON.stringify({answers,flags,crossed,current,submitted,annotations,student}));$('#saveStatus').textContent='Progress saved on this browser.'}catch(e){storage=false;$('#saveStatus').textContent='Keep this tab open to retain your progress.'}}
+try{const x=JSON.parse(localStorage.getItem(storageKey)||'null');if(x&&x.answers?.length===25&&x.flags?.length===25){if(x.student&&typeof x.student.name==='string'&&classNames.includes(x.student.className))student={name:x.student.name.slice(0,80),className:x.student.className};if(typeof x.attemptId==='string')attemptId=x.attemptId;syncRevision=Number.isSafeInteger(x.syncRevision)?x.syncRevision:0;syncedRevision=Number.isSafeInteger(x.syncedRevision)?x.syncedRevision:0;liveSignature=typeof x.liveSignature==='string'?x.liveSignature:'';answers=x.answers;flags=x.flags;crossed=x.crossed||crossed;submitted=!!x.submitted;if(Array.isArray(x.annotations)&&x.annotations.length===25)annotations=x.annotations;current=Math.max(0,Math.min(24,x.current||0))}}catch(e){storage=false}
+function save(){captureLiveUpdate();try{localStorage.setItem(storageKey,JSON.stringify({answers,flags,crossed,current,submitted,annotations,student,attemptId,syncRevision,syncedRevision,liveSignature}));$('#saveStatus').textContent='Progress saved on this browser.'}catch(e){storage=false;$('#saveStatus').textContent='Keep this tab open to retain your progress.'}try{localStorage.setItem(outboxKey,JSON.stringify(syncOutbox))}catch(e){}updateSyncStatus();if(syncOutbox.length&&!syncFlight&&!syncTimer)scheduleSync()}
 function answered(i){const a=answers[i],q=Q[i];return q.type==='number'?String(a).trim()!=='':q.type==='match'?a.every(v=>v!==''):a.length===q.a.length}
 function correct(i){const q=Q[i],a=answers[i];if(!answered(i))return false;if(q.type==='number')return /^\d+$/.test(String(a).trim())&&Number(a)===q.a;return JSON.stringify(q.type==='match'?a.map(Number):[...a].sort((x,y)=>x-y))===JSON.stringify(q.a)}
 function nav(){ $('#navigator').innerHTML=Q.map((q,i)=>`<button onclick="go(${i})" class="${answered(i)?'done ':''}${i===current?'current ':''}${flags[i]?'flagged':''}" aria-label="Question ${i+1}, ${answered(i)?'answered':'not complete'}${flags[i]?', marked for review':''}" ${i===current?'aria-current="step"':''}>${i+1}</button>`).join('');$('#count').textContent=answers.filter((_,i)=>answered(i)).length+' of 25 answered';$('#flag').setAttribute('aria-pressed',flags[current]);$('#flag').textContent=flags[current]?'⚑ Marked for review':'⚑ Mark for review';}
@@ -92,10 +98,10 @@ function closeModal(){$('#modal').close()}
 function answerText(i){const q=Q[i],a=answers[i];if(q.type==='number')return a===''?'No answer':String(a);if(q.type==='match')return q.targets.map((t,j)=>t+' → '+(a[j]===''?'No match':q.tokens[Number(a[j])])).join('; ');return a.length?a.map(v=>String.fromCharCode(65+v)).join(', '):'No answer'}
 function keyText(q){if(q.type==='number')return String(q.a);if(q.type==='match')return q.targets.map((t,j)=>t+' → '+q.tokens[q.a[j]]).join('; ');return q.a.map(v=>String.fromCharCode(65+v)).join(', ')}
 function review(){if(submitted){results();return}const n=answers.filter((_,i)=>answered(i)).length;openModal(`<h2>Review your answers</h2><p>${n} of 25 questions are complete. ${25-n?'Choose a question to finish it, or submit when you are ready.':'You can check any question before you submit.'}</p><div class="reviewgrid">${Q.map((q,i)=>`<button class="${answered(i)?'':'missing'}" onclick="closeModal();go(${i})">${i+1}${flags[i]?' ⚑':''}<br>${answered(i)?'Answered':'Check'}</button>`).join('')}</div><p class="hint">⚑ = marked for review. Yellow = incomplete.</p><div class="dialogbuttons"><button onclick="closeModal()">Keep working</button><button class="primary" onclick="finish()">Submit practice</button></div>`)}
-function finish(){if(!sessionStarted||!validStudent(student.name,student.className)){closeModal();showStudentEntry();return}submitted=true;save();render();results()}
-function results(){const score=Q.filter((q,i)=>correct(i)).length;openModal(`<h2>Practice complete</h2><p><strong>${esc(student.name)}</strong> · ${esc(student.className)}</p><div class="score">${score} / 25</div><p>${Math.round(score/25*100)}% correct. Read the explanations to learn from each question.</p>${Q.map((q,i)=>`<div class="result"><strong>${correct(i)?'✓':'○'} Question ${i+1}</strong><br>Your answer: ${esc(answerText(i))}<br>Correct answer: ${esc(keyText(q))}<p>${esc(q.why)}</p><button onclick="closeModal();go(${i})">View question ${i+1}</button></div>`).join('')}<div class="dialogbuttons"><button onclick="window.print()">Print results</button><button onclick="restartPrompt()">Start again</button><button class="primary" onclick="closeModal()">Close</button></div>`)}
+function finish(){if(!sessionStarted||!validStudent(student.name,student.className)){closeModal();showStudentEntry();return}submitted=true;save();render();results();retryTeacherSync()}
+function results(){const score=Q.filter((q,i)=>correct(i)).length;openModal(`<h2>Practice complete</h2><p><strong>${esc(student.name)}</strong> · ${esc(student.className)}</p><div class="score">${score} / 25</div><p id="resultSyncStatus" role="status">${esc(syncMessage())}</p><p>${Math.round(score/25*100)}% correct. Read the explanations to learn from each question.</p>${Q.map((q,i)=>`<div class="result"><strong>${correct(i)?'✓':'○'} Question ${i+1}</strong><br>Your answer: ${esc(answerText(i))}<br>Correct answer: ${esc(keyText(q))}<p>${esc(q.why)}</p><button onclick="closeModal();go(${i})">View question ${i+1}</button></div>`).join('')}<div class="dialogbuttons"><button onclick="window.print()">Print results</button><button onclick="restartPrompt()">Start again</button><button class="primary" onclick="closeModal()">Close</button></div>`)}
 function restartPrompt(){openModal('<h2>Start a new practice?</h2><p>This clears the answers, highlights, drawings, and results and returns to the name and class screen.</p><div class="dialogbuttons"><button onclick="results()">Keep results</button><button class="primary" onclick="resetPractice()">Start again</button></div>')}
-function clearStudentWork(){answers=Q.map(q=>q.type==='match'?['','','','']:q.type==='number'?'':[]);flags=Array(25).fill(false);crossed=Q.map(()=>[]);submitted=false;current=0;annotations=Array.from({length:25},()=>[]);activeTool='select'}
+function clearStudentWork(){attemptId=newAttemptId();syncRevision=0;syncedRevision=0;liveSignature='';syncError=false;answers=Q.map(q=>q.type==='match'?['','','','']:q.type==='number'?'':[]);flags=Array(25).fill(false);crossed=Q.map(()=>[]);submitted=false;current=0;annotations=Array.from({length:25},()=>[]);activeTool='select'}
 function resetPractice(){clearStudentWork();student={name:'',className:''};sessionStarted=false;closeModal();render();showStudentEntry()}
 function showHelp(){openModal('<h2>How to practice</h2><p>Choose an answer, type a number, or match the expressions. Your answers stay selected as you move between questions.</p><p><strong>Read aloud</strong> reads the question, describes its picture, and reads the answer choices. Use Pause, Resume, or Stop as needed. Sound uses the voice available on your device.</p><p>Use the question numbers to move around. Mark a question with a flag if you want to check it later. Use Review before submitting. Answers and explanations appear after submission.</p><p><strong>Highlight:</strong> drag across words to highlight them in yellow. On a touchscreen, select words and tap the highlighter icon. <strong>Draw:</strong> drag to circle, box, or write on the question. Choose a pen color if you like. Choose <strong>Answer</strong> to select answers again. <strong>X out:</strong> click an answer circle to place an X on it; click again to remove the X. Choose <strong>Answer</strong> to select an answer. <strong>Undo</strong> removes your last highlight or drawing; <strong>Clear marks</strong> clears only this question. Marks are saved with your progress.</p><p>Use scratch paper for extra work. This is an unofficial practice activity.</p><div class="dialogbuttons"><button class="primary" onclick="closeModal()">Back to practice</button></div>')}
 let speechRun=0,speechActive=false,speechPaused=false,speechTimer=null;
@@ -157,6 +163,56 @@ function beginPractice(event){
  student={name,className};sessionStarted=true;$('#studentDisplay').textContent=student.name;$('#classDisplay').textContent=student.className;
  $('#studentEntry').hidden=true;$('#assessment').hidden=false;render();$('#content .prompt').focus();
 }
+
+
+function newAttemptId(){return window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():'attempt-'+Date.now().toString(16)+'-'+Math.random().toString(16).slice(2)+'-'+Math.random().toString(16).slice(2)}
+function liveConfigured(){return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(GOOGLE_SHEETS_URL)}
+function captureLiveUpdate(){
+ if(!sessionStarted||!validStudent(student.name,student.className))return;
+ const signature=JSON.stringify([student,answers,submitted]);
+ if(signature===liveSignature)return;
+ liveSignature=signature;syncRevision++;
+ const payload={testId:'practiceA-6279743',site:LIVE_SITE,submissionId:attemptId,revision:syncRevision,status:submitted?'submitted':'in_progress',student:{...student},answers:JSON.parse(JSON.stringify(answers))};
+ const i=syncOutbox.findIndex(p=>p.submissionId===attemptId);if(i<0)syncOutbox.push(payload);else syncOutbox[i]=payload;
+ scheduleSync();
+}
+function syncMessage(){
+ if(!liveConfigured())return 'Live results connection is not set up yet.';
+ if(syncError)return 'Your answers are saved here. Sending to your teacher needs another try.';
+ if(syncRevision>0&&syncedRevision>=syncRevision)return submitted?'Your submitted results reached your teacher.':'Your latest answers reached your teacher.';
+ return syncFlight||syncOutbox.length?'Sending answers to your teacher…':'Live results ready.';
+}
+function updateSyncStatus(){
+ const message=syncMessage();$('#syncStatus').textContent=message;const result=$('#resultSyncStatus');if(result)result.textContent=message;$('#retrySync').hidden=!liveConfigured()||!syncError;
+}
+function scheduleSync(delay=1200){if(!liveConfigured())return;if(syncTimer)clearTimeout(syncTimer);syncTimer=setTimeout(()=>{syncTimer=null;flushLiveUpdates()},delay)}
+function retryTeacherSync(){syncError=false;if(syncTimer)clearTimeout(syncTimer);syncTimer=null;updateSyncStatus();flushLiveUpdates()}
+function requestReceipt(payload){return new Promise((resolve,reject)=>{
+ const callback='practiceAReceipt_'+newAttemptId().replace(/[^a-f0-9]/g,'').slice(0,40),script=document.createElement('script');
+ let timer;function cleanup(){clearTimeout(timer);script.remove();delete window[callback]}
+ window[callback]=value=>{cleanup();resolve(value)};
+ script.onerror=()=>{cleanup();reject(new Error('Receipt unavailable'))};
+ const url=new URL(GOOGLE_SHEETS_URL);url.searchParams.set('action','receipt');url.searchParams.set('id',payload.submissionId);url.searchParams.set('revision',payload.revision);url.searchParams.set('callback',callback);url.searchParams.set('_',Date.now());script.src=url.href;
+ timer=setTimeout(()=>{cleanup();reject(new Error('Receipt timed out'))},10000);document.head.appendChild(script);
+})}
+async function flushLiveUpdates(){
+ if(syncFlight||!liveConfigured()||!syncOutbox.length)return;
+ const payload=syncOutbox[0];syncFlight=payload;syncError=false;updateSyncStatus();let success=false;
+ try{
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);
+  try{await fetch(GOOGLE_SHEETS_URL,{method:'POST',mode:'no-cors',credentials:'omit',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(payload),signal:controller.signal})}finally{clearTimeout(timeout)}
+  // A no-cors POST is not proof of a save. Confirm it using a read-only receipt.
+  let confirmed=false;
+  for(let i=0;i<6;i++){const receipt=await requestReceipt(payload);if(receipt.saved&&receipt.revision>=payload.revision){confirmed=true;break}if(receipt.error)throw new Error(receipt.error);await new Promise(resolve=>setTimeout(resolve,1200))}
+  if(!confirmed)throw new Error('Save was not confirmed');
+  syncOutbox=syncOutbox.filter(p=>p.submissionId!==payload.submissionId||p.revision>payload.revision);
+  if(payload.submissionId===attemptId)syncedRevision=Math.max(syncedRevision,payload.revision);
+  success=true;syncError=false;
+ }catch(e){syncError=true;const i=syncOutbox.findIndex(p=>p.submissionId===payload.submissionId);if(i>=0)syncOutbox.push(syncOutbox.splice(i,1)[0])}
+ finally{syncFlight=null;save();if(syncOutbox.length)scheduleSync(success?500:20000)}
+}
+window.addEventListener('online',()=>retryTeacherSync());
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&liveConfigured()&&syncOutbox.length&&!syncFlight){const payload=syncOutbox[0];fetch(GOOGLE_SHEETS_URL,{method:'POST',mode:'no-cors',credentials:'omit',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(payload),keepalive:true}).catch(()=>{});}});
 
 $('#modal').addEventListener('close',stopSpeech);window.addEventListener('pagehide',stopSpeech);render();showStudentEntry();
 </script>
