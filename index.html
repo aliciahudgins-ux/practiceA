@@ -13,10 +13,11 @@
 #assessment[hidden],#studentEntry[hidden]{display:none}.student-entry{max-width:520px;margin:42px auto;padding:28px;background:#fff;border:1px solid #bacbd7;border-radius:8px;box-shadow:0 3px 12px #173e5910}.student-entry h1{font-size:27px;margin:0 0 10px}.student-entry p{line-height:1.5;color:#465e6f}.student-entry label{display:block;margin-top:20px;font-weight:bold}.student-entry input,.student-entry select{display:block;width:100%;font-size:20px;padding:12px;margin-top:8px;border:1px solid #7c95a7;border-radius:4px;background:white}.student-entry button{margin-top:24px;width:100%}.student-bar{padding:10px 24px;background:white;border-bottom:1px solid #c5d3dd;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:16px}.student-bar button{margin-left:auto;font-size:14px;padding:6px 10px;min-height:36px}#studentError{color:#a52d2d;min-height:20px;font-size:15px}@media(max-width:580px){.student-entry{margin:22px 14px;padding:22px}.student-bar{padding:10px 14px}}
 
 #calculatorButton[hidden],#calculator[hidden]{display:none}#calculator{position:fixed;right:22px;top:165px;width:280px;max-width:calc(100vw - 20px);background:#edf2f6;border:1px solid #708c9f;border-radius:8px;box-shadow:0 8px 30px #102b4055;z-index:40;padding:12px;color:#172b3c}.calc-header{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:move;touch-action:none;margin:-2px 0 10px;padding:0 0 8px;border-bottom:1px solid #bacbd6}.calc-header strong{font-size:17px}.calc-header button{min-height:32px;padding:2px 9px;font-size:23px;background:transparent}.calc-readout{width:100%;padding:12px 8px;border:1px solid #829aa8;border-radius:4px;background:#fff;text-align:right;font-size:29px;font-variant-numeric:tabular-nums;color:#172b3c}.calc-history{height:23px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:#425f72;text-align:right;padding:3px 0}.calc-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px}.calc-keys button{padding:9px 3px;font-size:22px;min-height:46px;color:#172b3c;background:#fff}.calc-keys .calc-operator{background:#d8e8f4}.calc-keys .calc-equals{background:#225e87;color:#fff}.calc-keys .calc-clear{background:#fbe3df}.calc-tip{font-size:11px;line-height:1.4;margin:9px 0 0;color:#425f72}@media(max-width:580px){#calculator{right:10px;top:120px;width:260px}}@media print{#calculator{display:none!important}}
+.section-state{padding:10px 22px;background:#f8fafc;border-bottom:1px solid #dce4ea;font-size:14px;font-weight:bold;color:#335970}.entry-sections{font-size:15px}.grid button:disabled,.reviewgrid button:disabled{opacity:.45;cursor:not-allowed;background:#e6e8eb;color:#4c5b65}
 </style>
 <header><div><strong>Grade 3 Mathematics</strong><small>Online assessment practice</small></div><span class="badge">Independent practice • Unofficial</span></header>
 <section id="studentEntry" class="student-entry" aria-labelledby="entryTitle">
-<h1 id="entryTitle">Ready for math practice?</h1><p>Enter your name and choose your class before you begin.</p>
+<h1 id="entryTitle">Ready for math practice?</h1><p>Enter your name and choose your class before you begin.</p><p class="entry-sections"><strong>Section 1:</strong> Questions 1–19, no calculator.<br><strong>Section 2:</strong> Questions 20–25, calculator available.<br>You cannot return to Section 1 after starting Section 2.</p>
 <form id="studentForm" onsubmit="beginPractice(event)">
 <label for="studentName">Student name</label><input id="studentName" name="studentName" type="text" required maxlength="80" autocomplete="off" placeholder="First and last name">
 <label for="studentClass">Class</label><select id="studentClass" name="studentClass" required><option value="">Choose your class</option><option>Presnell’s Powerhouses</option><option>Hudgins’ Heroes</option><option>Clark’s Crew</option></select>
@@ -35,7 +36,7 @@
 <button onclick="showHelp()">Help</button><span id="speechStatus" role="status" aria-live="polite"></span><span id="toolHint" class="toolhint" role="status">Answer: choose or type your answer.</span>
 </div>
 <div class="shell"><aside><h2>Question navigator</h2><div id="navigator" class="grid" aria-label="Choose a question"></div><div class="legend"><span>Blue</span> Answered<br>⚑ Marked for review<br>Outline = current question</div><div class="count" id="count"></div><button style="margin-top:12px;width:100%" onclick="review()">Review answers</button></aside>
-<main><div class="qtop"><strong id="position"></strong><button id="flag" onclick="toggleFlag()" aria-pressed="false">⚑ Mark for review</button></div><div id="content" class="content"></div><div class="navigation"><button id="back" onclick="go(current-1)">← Back</button><div class="navright"><button onclick="review()">Review</button><button id="next" class="primary" onclick="go(current+1)">Next →</button></div></div></main></div>
+<main><div class="qtop"><strong id="position"></strong><button id="flag" onclick="toggleFlag()" aria-pressed="false">⚑ Mark for review</button></div><div id="sectionState" class="section-state"></div><div id="content" class="content"></div><div class="navigation"><button id="back" onclick="go(current-1)">← Back</button><div class="navright"><button onclick="review()">Review</button><button id="next" class="primary" onclick="go(current+1)">Next →</button></div></div></main></div>
 <footer>Practice at your own pace. Use scratch paper to show your work. <span id="saveStatus"></span><br><span id="syncStatus" role="status" aria-live="polite"></span> <button id="retrySync" onclick="retryTeacherSync()" hidden>Retry sending</button></footer>
 </div>
 <section id="calculator" role="region" aria-label="Four-function calculator" tabindex="-1" hidden>
@@ -52,31 +53,359 @@
 <dialog id="modal"><div id="modalContent"></div></dialog>
 <script>
 const Q=[
-{p:'Kayden is serving his family 15 cookies. There are 5 people in his family. Which drawing represents the number of cookies each person receives?',o:['3 groups of 6 cookies','5 groups of 5 cookies','5 groups of 3 cookies','3 groups with 5, 4, and 4 cookies'],groups:[[6,6,6],[5,5,5,5,5],[3,3,3,3,3],[5,4,4]],a:[2],why:'15 ÷ 5 = 3. Each of the 5 people receives 3 cookies.'},
-{p:'Choose THREE expressions that have the same value as 8 × 6.',o:['6 + 6 + 6 + 6 + 6 + 6 + 6 + 6','the sum of 4 × 3 and 4 × 3','8 + 8 + 8 + 8 + 8 + 8','the sum of 8 × 3 and 8 × 3','8 + 6 + 8 + 6'],a:[0,2,3],why:'8 × 6 = 48. Choices A, C, and D each equal 48.'},
-{p:'Which expression has the same product as (3 × 4) × 2?',o:['3 × (2 × 4)','4 × 3','2 × 7','(4 + 3) + 2'],a:[0],why:'Both (3 × 4) × 2 and 3 × (2 × 4) equal 24.'},
-{p:'Tommy has 36 apples. He placed them equally into 9 baskets. How many apples are in each basket?',o:['27','45','3','4'],a:[3],why:'36 ÷ 9 = 4 apples in each basket.'},
-{p:'There are 24 pencils in a box. A group of 6 children shares them equally. Which equation finds p, the number of pencils each child receives?',o:['p = 24 ÷ 6','6 ÷ 24 = p','24 × 6 = p','p = 6 × 4'],a:[0],why:'Divide 24 pencils equally among 6 children: p = 24 ÷ 6 = 4.'},
-{p:'Lori and her friends found shells at the beach. Altogether they found 54 shells. If every person found 6 shells, how many people were collecting shells?',o:['9','64','8','45'],a:[0],why:'54 ÷ 6 = 9 people.'},
-{p:'Which expression can be used to find the missing number in the multiplication chart?',diagram:'multiplyMissing',desc:'A multiplication chart from 1 to 10. Row 7 and column 7 are shaded. The cells at row 4, column 7 and row 7, column 4 are blank.',o:['7 × 3','7 + 7','21 + 7','21 − 7'],a:[2],why:'The missing number is 28. Start with 7 × 3 = 21 and add one more group of 7: 21 + 7 = 28.'},
-{p:'A bagel shop made 1,000 bagels.\n• 320 bagels are everything.\n• 253 bagels are sesame.\n• The rest are plain.\nHow many plain bagels are there?',o:['1,573','573','427','67'],a:[2],why:'320 + 253 = 573. Then 1,000 − 573 = 427 plain bagels.'},
-{p:'Andy’s basketball team did a fundraiser. On Friday they made $150 selling candy. On Saturday they made $195 washing cars. How much money did they make on both days?',o:['$345','$325','$45','$245'],a:[0],why:'150 + 195 = 345 dollars.'},
-{p:'What is the value of r in this equation?',equation:'5 × 6 = 5 × 3 × r',o:['3','30','22','2'],a:[3],why:'5 × 6 = 30. Since 5 × 3 = 15, r must be 2.'},
-{p:'This hundreds board has missing numbers. Find the pattern of the missing numbers.',diagram:'hundredsMissing',desc:'A hundreds board from 1 to 100. Four cells in the third column are blank, in the rows starting with 11, 21, 31, and 41.',o:['even, odd, even, odd','even, even, even, even','odd, odd, odd, odd','odd, even, odd, even'],a:[2],why:'The missing numbers are 13, 23, 33, and 43. They are all odd.'},
-{p:'Which strategy could be used to solve 4 × 9?',o:['4 × 3 = s\n4 × 3 = s\n4 × 3 = s\ns × s × s = n','4 + 3 = s\n4 + 3 = s\n4 + 3 = s\ns + s + s = n','4 × 3 = s\n4 × 3 = s\n4 × 3 = s\ns + s + s = n','4 + 3 = s\n4 + 3 = s\n4 + 3 = s\ns × s × s = n'],a:[2],why:'Break 9 into 3 + 3 + 3. Add three products of 4 × 3: 12 + 12 + 12 = 36.'},
-{p:'Which number sentence is true?',o:['4 × 9 = 4 × 4 × 5','6 × 7 = 6 × 3 × 4','5 × 8 = 5 × 4 × 4','5 × 4 = 5 × 2 × 2'],a:[3],why:'5 × 4 = 20, and 5 × 2 × 2 = 20.'},
-{p:'Match each choice to the equivalent expression.',type:'match',tokens:['800 + 7','600 + 90 + 1','600 + 10 + 7','400 + 80'],targets:['307 + 384','320 + 160','601 + 206','474 + 143'],a:[1,3,0,2],why:'307 + 384 = 691; 320 + 160 = 480; 601 + 206 = 807; 474 + 143 = 617.'},
-{p:'Jeff’s garden has 4 rows with 4 carrots in each row. How many carrots are in the garden?',type:'number',a:16,unit:'carrots',why:'4 × 4 = 16 carrots.'},
-{p:'The bar graph shows how many points each person scored. How many fewer points did Erin score than Mary or Pat?',diagram:'bar',desc:'A bar graph titled Goals Scored. The vertical scale counts by twos from 0 to 8. Mary scored 6, Erin scored 4, Pat scored 6, and Andrew scored 5.',o:['8','12','2','10'],a:[2],why:'Mary and Pat each scored 6. Erin scored 4. 6 − 4 = 2 fewer points.'},
-{p:'Battleground Elementary collected canned goods. Students brought in 438 cans on Thursday and 345 cans on Friday. How many more cans did they bring on Thursday than on Friday?',type:'number',a:93,unit:'cans',why:'438 − 345 = 93 more cans.'},
-{p:'Jesse bought 32 hotdog buns for a birthday party. The buns were sold in packages of 8. How many packages of hotdog buns did Jesse buy?',type:'number',a:4,unit:'packages',why:'32 ÷ 8 = 4 packages.'},
-{p:'A bookstore had 506 comic books in stock. After a busy weekend, the store sold 258 of them. How many comic books does the bookstore have left?',type:'number',a:248,unit:'comic books',why:'506 − 258 = 248 comic books.'},
-{p:'This hundreds board has a column shaded. Which numbers continue the pattern in the shaded column?',diagram:'hundredsShade',desc:'A number board from 0 to 99 with ten numbers per row. The third column is shaded: 2, 12, 22, 32, 42, 52, 62, 72, 82, and 92.',o:['92, 102, 112, 122','102, 112, 122, 132','90, 91, 92, 93','93, 94, 95, 96'],a:[1],why:'The pattern adds 10 each time. After 92 come 102, 112, 122, and 132.'},
-{p:'Ms. Casto’s class graphed the eye colors of all the students. Use the picture graph. How many more students have green eyes than blue eyes?',diagram:'eyes',desc:'A picture graph titled Eye Color. Brown has 5 eye pictures, blue has 3, and green has 6. Each eye picture represents 3 students.',type:'number',a:9,unit:'students',why:'Green: 6 × 3 = 18. Blue: 3 × 3 = 9. 18 − 9 = 9 more students.'},
-{p:'Players recorded how many points they scored on a video game. How many more points did Player 3 score than Player 1?',diagram:'tally',desc:'A tally chart titled Video Game Points. Player 1 has 3 groups of 5 tally marks and 2 more marks. Player 2 has 2 groups of 5. Player 3 has 4 groups of 5.',o:['10','20','37','3'],a:[3],why:'Player 3 scored 20 points. Player 1 scored 17. 20 − 17 = 3.'},
-{p:'The picture graph shows how many students rode their bikes each day. There were 4 fewer students who rode bikes on Thursday than on Wednesday. How many students rode bikes on Thursday?',diagram:'bikes',desc:'A picture graph titled Students Riding Bikes. Monday has 3 bike pictures, Tuesday has 1, Wednesday has 5, Thursday is blank, and Friday has 3. Each bike represents 4 students.',o:['1','20','16','4'],a:[2],why:'Wednesday: 5 × 4 = 20 students. Thursday: 20 − 4 = 16 students.'},
-{p:'The picture graph shows students’ favorite cookies. How many more students liked peanut butter and chocolate chip than ginger snap and animal cracker?',diagram:'cookies',desc:'A picture graph titled Favorite Cookie. Peanut butter has 5 cookie pictures, chocolate chip has 4, ginger snap has 2, and animal cracker has 3. Each cookie picture represents 2 students.',o:['8','4','18','10'],a:[0],why:'Peanut butter and chocolate chip: (5 + 4) × 2 = 18. Ginger snap and animal cracker: (2 + 3) × 2 = 10. 18 − 10 = 8 more students.'},
-{p:'Which statement is true about the multiplication chart?',diagram:'multiply',desc:'A multiplication chart with rows and columns numbered 1 through 10. Each cell shows the product of its row and column numbers.',o:['Each number in the 2s column is also in the 10s column.','In each row, the number in the 5s column is half the number in the 10s column.','Each number in the 5s column is also in the 2s column.','In each row, the number in the 4s column is half the number in the 10s column.'],a:[1],why:'5 is half of 10, so multiplying a number by 5 gives half the product of multiplying that number by 10.'}
+  {
+    "p": "Choose THREE expressions that have the same value as 8 × 6.",
+    "o": [
+      "6 + 6 + 6 + 6 + 6 + 6 + 6 + 6",
+      "the sum of 4 × 3 and 4 × 3",
+      "8 + 8 + 8 + 8 + 8 + 8",
+      "the sum of 8 × 3 and 8 × 3",
+      "8 + 6 + 8 + 6"
+    ],
+    "a": [
+      0,
+      2,
+      3
+    ],
+    "why": "8 × 6 = 48. Choices A, C, and D each equal 48."
+  },
+  {
+    "p": "Which expression has the same product as (3 × 4) × 2?",
+    "o": [
+      "3 × (2 × 4)",
+      "4 × 3",
+      "2 × 7",
+      "(4 + 3) + 2"
+    ],
+    "a": [
+      0
+    ],
+    "why": "Both (3 × 4) × 2 and 3 × (2 × 4) equal 24."
+  },
+  {
+    "p": "Tommy has 36 apples. He placed them equally into 9 baskets. How many apples are in each basket?",
+    "o": [
+      "27",
+      "45",
+      "3",
+      "4"
+    ],
+    "a": [
+      3
+    ],
+    "why": "36 ÷ 9 = 4 apples in each basket."
+  },
+  {
+    "p": "There are 24 pencils in a box. A group of 6 children shares them equally. Which equation finds p, the number of pencils each child receives?",
+    "o": [
+      "p = 24 ÷ 6",
+      "6 ÷ 24 = p",
+      "24 × 6 = p",
+      "p = 6 × 4"
+    ],
+    "a": [
+      0
+    ],
+    "why": "Divide 24 pencils equally among 6 children: p = 24 ÷ 6 = 4."
+  },
+  {
+    "p": "Lori and her friends found shells at the beach. Altogether they found 54 shells. If every person found 6 shells, how many people were collecting shells?",
+    "o": [
+      "9",
+      "64",
+      "8",
+      "45"
+    ],
+    "a": [
+      0
+    ],
+    "why": "54 ÷ 6 = 9 people."
+  },
+  {
+    "p": "Which expression can be used to find the missing number in the multiplication chart?",
+    "diagram": "multiplyMissing",
+    "desc": "A multiplication chart from 1 to 10. Row 7 and column 7 are shaded. The cells at row 4, column 7 and row 7, column 4 are blank.",
+    "o": [
+      "7 × 3",
+      "7 + 7",
+      "21 + 7",
+      "21 − 7"
+    ],
+    "a": [
+      2
+    ],
+    "why": "The missing number is 28. Start with 7 × 3 = 21 and add one more group of 7: 21 + 7 = 28."
+  },
+  {
+    "p": "A bagel shop made 1,000 bagels.\n• 320 bagels are everything.\n• 253 bagels are sesame.\n• The rest are plain.\nHow many plain bagels are there?",
+    "o": [
+      "1,573",
+      "573",
+      "427",
+      "67"
+    ],
+    "a": [
+      2
+    ],
+    "why": "320 + 253 = 573. Then 1,000 − 573 = 427 plain bagels."
+  },
+  {
+    "p": "Andy’s basketball team did a fundraiser. On Friday they made $150 selling candy. On Saturday they made $195 washing cars. How much money did they make on both days?",
+    "o": [
+      "$345",
+      "$325",
+      "$45",
+      "$245"
+    ],
+    "a": [
+      0
+    ],
+    "why": "150 + 195 = 345 dollars."
+  },
+  {
+    "p": "What is the value of r in this equation?",
+    "equation": "5 × 6 = 5 × 3 × r",
+    "o": [
+      "3",
+      "30",
+      "22",
+      "2"
+    ],
+    "a": [
+      3
+    ],
+    "why": "5 × 6 = 30. Since 5 × 3 = 15, r must be 2."
+  },
+  {
+    "p": "This hundreds board has missing numbers. Find the pattern of the missing numbers.",
+    "diagram": "hundredsMissing",
+    "desc": "A hundreds board from 1 to 100. Four cells in the third column are blank, in the rows starting with 11, 21, 31, and 41.",
+    "o": [
+      "even, odd, even, odd",
+      "even, even, even, even",
+      "odd, odd, odd, odd",
+      "odd, even, odd, even"
+    ],
+    "a": [
+      2
+    ],
+    "why": "The missing numbers are 13, 23, 33, and 43. They are all odd."
+  },
+  {
+    "p": "Which strategy could be used to solve 4 × 9?",
+    "o": [
+      "4 × 3 = s\n4 × 3 = s\n4 × 3 = s\ns × s × s = n",
+      "4 + 3 = s\n4 + 3 = s\n4 + 3 = s\ns + s + s = n",
+      "4 × 3 = s\n4 × 3 = s\n4 × 3 = s\ns + s + s = n",
+      "4 + 3 = s\n4 + 3 = s\n4 + 3 = s\ns × s × s = n"
+    ],
+    "a": [
+      2
+    ],
+    "why": "Break 9 into 3 + 3 + 3. Add three products of 4 × 3: 12 + 12 + 12 = 36."
+  },
+  {
+    "p": "Which number sentence is true?",
+    "o": [
+      "4 × 9 = 4 × 4 × 5",
+      "6 × 7 = 6 × 3 × 4",
+      "5 × 8 = 5 × 4 × 4",
+      "5 × 4 = 5 × 2 × 2"
+    ],
+    "a": [
+      3
+    ],
+    "why": "5 × 4 = 20, and 5 × 2 × 2 = 20."
+  },
+  {
+    "p": "Match each choice to the equivalent expression.",
+    "type": "match",
+    "tokens": [
+      "800 + 7",
+      "600 + 90 + 1",
+      "600 + 10 + 7",
+      "400 + 80"
+    ],
+    "targets": [
+      "307 + 384",
+      "320 + 160",
+      "601 + 206",
+      "474 + 143"
+    ],
+    "a": [
+      1,
+      3,
+      0,
+      2
+    ],
+    "why": "307 + 384 = 691; 320 + 160 = 480; 601 + 206 = 807; 474 + 143 = 617."
+  },
+  {
+    "p": "Jeff’s garden has 4 rows with 4 carrots in each row. How many carrots are in the garden?",
+    "type": "number",
+    "a": 16,
+    "unit": "carrots",
+    "why": "4 × 4 = 16 carrots."
+  },
+  {
+    "p": "The bar graph shows how many points each person scored. How many fewer points did Erin score than Mary or Pat?",
+    "diagram": "bar",
+    "desc": "A bar graph titled Goals Scored. The vertical scale counts by twos from 0 to 8. Mary scored 6, Erin scored 4, Pat scored 6, and Andrew scored 5.",
+    "o": [
+      "8",
+      "12",
+      "2",
+      "10"
+    ],
+    "a": [
+      2
+    ],
+    "why": "Mary and Pat each scored 6. Erin scored 4. 6 − 4 = 2 fewer points."
+  },
+  {
+    "p": "Battleground Elementary collected canned goods. Students brought in 438 cans on Thursday and 345 cans on Friday. How many more cans did they bring on Thursday than on Friday?",
+    "type": "number",
+    "a": 93,
+    "unit": "cans",
+    "why": "438 − 345 = 93 more cans."
+  },
+  {
+    "p": "Jesse bought 32 hotdog buns for a birthday party. The buns were sold in packages of 8. How many packages of hotdog buns did Jesse buy?",
+    "type": "number",
+    "a": 4,
+    "unit": "packages",
+    "why": "32 ÷ 8 = 4 packages."
+  },
+  {
+    "p": "A bookstore had 506 comic books in stock. After a busy weekend, the store sold 258 of them. How many comic books does the bookstore have left?",
+    "type": "number",
+    "a": 248,
+    "unit": "comic books",
+    "why": "506 − 258 = 248 comic books."
+  },
+  {
+    "p": "This hundreds board has a column shaded. Which numbers continue the pattern in the shaded column?",
+    "diagram": "hundredsShade",
+    "desc": "A number board from 0 to 99 with ten numbers per row. The third column is shaded: 2, 12, 22, 32, 42, 52, 62, 72, 82, and 92.",
+    "o": [
+      "92, 102, 112, 122",
+      "102, 112, 122, 132",
+      "90, 91, 92, 93",
+      "93, 94, 95, 96"
+    ],
+    "a": [
+      1
+    ],
+    "why": "The pattern adds 10 each time. After 92 come 102, 112, 122, and 132."
+  },
+  {
+    "p": "Ms. Casto’s class graphed the eye colors of all the students. Use the picture graph. How many more students have green eyes than blue eyes?",
+    "diagram": "eyes",
+    "desc": "A picture graph titled Eye Color. Brown has 5 eye pictures, blue has 3, and green has 6. Each eye picture represents 3 students.",
+    "type": "number",
+    "a": 9,
+    "unit": "students",
+    "why": "Green: 6 × 3 = 18. Blue: 3 × 3 = 9. 18 − 9 = 9 more students."
+  },
+  {
+    "p": "Players recorded how many points they scored on a video game. How many more points did Player 3 score than Player 1?",
+    "diagram": "tally",
+    "desc": "A tally chart titled Video Game Points. Player 1 has 3 groups of 5 tally marks and 2 more marks. Player 2 has 2 groups of 5. Player 3 has 4 groups of 5.",
+    "o": [
+      "10",
+      "20",
+      "37",
+      "3"
+    ],
+    "a": [
+      3
+    ],
+    "why": "Player 3 scored 20 points. Player 1 scored 17. 20 − 17 = 3."
+  },
+  {
+    "p": "The picture graph shows how many students rode their bikes each day. There were 4 fewer students who rode bikes on Thursday than on Wednesday. How many students rode bikes on Thursday?",
+    "diagram": "bikes",
+    "desc": "A picture graph titled Students Riding Bikes. Monday has 3 bike pictures, Tuesday has 1, Wednesday has 5, Thursday is blank, and Friday has 3. Each bike represents 4 students.",
+    "o": [
+      "1",
+      "20",
+      "16",
+      "4"
+    ],
+    "a": [
+      2
+    ],
+    "why": "Wednesday: 5 × 4 = 20 students. Thursday: 20 − 4 = 16 students."
+  },
+  {
+    "p": "The picture graph shows students’ favorite cookies. How many more students liked peanut butter and chocolate chip than ginger snap and animal cracker?",
+    "diagram": "cookies",
+    "desc": "A picture graph titled Favorite Cookie. Peanut butter has 5 cookie pictures, chocolate chip has 4, ginger snap has 2, and animal cracker has 3. Each cookie picture represents 2 students.",
+    "o": [
+      "8",
+      "4",
+      "18",
+      "10"
+    ],
+    "a": [
+      0
+    ],
+    "why": "Peanut butter and chocolate chip: (5 + 4) × 2 = 18. Ginger snap and animal cracker: (2 + 3) × 2 = 10. 18 − 10 = 8 more students."
+  },
+  {
+    "p": "Which statement is true about the multiplication chart?",
+    "diagram": "multiply",
+    "desc": "A multiplication chart with rows and columns numbered 1 through 10. Each cell shows the product of its row and column numbers.",
+    "o": [
+      "Each number in the 2s column is also in the 10s column.",
+      "In each row, the number in the 5s column is half the number in the 10s column.",
+      "Each number in the 5s column is also in the 2s column.",
+      "In each row, the number in the 4s column is half the number in the 10s column."
+    ],
+    "a": [
+      1
+    ],
+    "why": "5 is half of 10, so multiplying a number by 5 gives half the product of multiplying that number by 10."
+  },
+  {
+    "p": "Kayden is serving his family 15 cookies. There are 5 people in his family. Which drawing represents the number of cookies each person receives?",
+    "o": [
+      "3 groups of 6 cookies",
+      "5 groups of 5 cookies",
+      "5 groups of 3 cookies",
+      "3 groups with 5, 4, and 4 cookies"
+    ],
+    "groups": [
+      [
+        6,
+        6,
+        6
+      ],
+      [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      [
+        5,
+        4,
+        4
+      ]
+    ],
+    "a": [
+      2
+    ],
+    "why": "15 ÷ 5 = 3. Each of the 5 people receives 3 cookies."
+  }
 ];
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let annotations=Array.from({length:25},()=>[]),activeTool='select',liveStroke=null;
@@ -84,26 +413,29 @@ const classNames=['Presnell’s Powerhouses','Hudgins’ Heroes','Clark’s Crew
 // Add the teacher's deployed Google Apps Script Web app URL here after setup.
 const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxlhape4rt8J4S7LPWR_16MrPjMHLMeC6swaIj1LwjJTagL-MUbaIbpYFyShpXKYRjr/exec';
 const LIVE_SITE = 'https://aliciahudgins-ux.github.io/practiceA/';
-const outboxKey='math-practice-6279743-live-outbox-v2';
+const outboxKey='math-practice-6279743-sections-outbox-v3';
 let attemptId=newAttemptId(),syncRevision=0,syncedRevision=0,liveSignature='',syncOutbox=[],syncTimer=null,syncFlight=null,syncError=false;
 try{const pending=JSON.parse(localStorage.getItem(outboxKey)||'[]');if(Array.isArray(pending))syncOutbox=pending}catch(e){}
 let calcValue='0',calcStored=null,calcOperation=null,calcFresh=false,calcRepeatOp=null,calcRepeatValue=null,calcHistory='',calcDrag=null;
 let student={name:'',className:''},sessionStarted=false;
+let calculatorSectionStarted=false;
 let current=0,answers=Q.map(q=>q.type==='match'?['','','','']:q.type==='number'?'':[]),flags=Array(25).fill(false),crossed=Q.map(()=>[]),submitted=false,storage=true;
-const storageKey='math-practice-6279743-v1';
-try{const x=JSON.parse(localStorage.getItem(storageKey)||'null');if(x&&x.answers?.length===25&&x.flags?.length===25){if(x.student&&typeof x.student.name==='string'&&classNames.includes(x.student.className))student={name:x.student.name.slice(0,80),className:x.student.className};if(typeof x.attemptId==='string')attemptId=x.attemptId;syncRevision=Number.isSafeInteger(x.syncRevision)?x.syncRevision:0;syncedRevision=Number.isSafeInteger(x.syncedRevision)?x.syncedRevision:0;liveSignature=typeof x.liveSignature==='string'?x.liveSignature:'';answers=x.answers;flags=x.flags;crossed=x.crossed||crossed;submitted=!!x.submitted;if(Array.isArray(x.annotations)&&x.annotations.length===25)annotations=x.annotations;current=Math.max(0,Math.min(24,x.current||0))}}catch(e){storage=false}
-function save(){captureLiveUpdate();try{localStorage.setItem(storageKey,JSON.stringify({answers,flags,crossed,current,submitted,annotations,student,attemptId,syncRevision,syncedRevision,liveSignature}));$('#saveStatus').textContent='Progress saved on this browser.'}catch(e){storage=false;$('#saveStatus').textContent='Keep this tab open to retain your progress.'}try{localStorage.setItem(outboxKey,JSON.stringify(syncOutbox))}catch(e){}updateSyncStatus();if(syncOutbox.length&&!syncFlight&&!syncTimer)scheduleSync()}
+const storageKey='math-practice-6279743-sections-v3';
+try{const x=JSON.parse(localStorage.getItem(storageKey)||'null');if(x&&x.answers?.length===25&&x.flags?.length===25){if(x.student&&typeof x.student.name==='string'&&classNames.includes(x.student.className))student={name:x.student.name.slice(0,80),className:x.student.className};if(typeof x.attemptId==='string')attemptId=x.attemptId;syncRevision=Number.isSafeInteger(x.syncRevision)?x.syncRevision:0;syncedRevision=Number.isSafeInteger(x.syncedRevision)?x.syncedRevision:0;liveSignature=typeof x.liveSignature==='string'?x.liveSignature:'';answers=x.answers;flags=x.flags;crossed=x.crossed||crossed;submitted=!!x.submitted;calculatorSectionStarted=x.calculatorSectionStarted===true;if(Array.isArray(x.annotations)&&x.annotations.length===25)annotations=x.annotations;current=Math.max(0,Math.min(24,x.current||0))}}catch(e){storage=false}
+function save(){captureLiveUpdate();try{localStorage.setItem(storageKey,JSON.stringify({answers,flags,crossed,current,submitted,annotations,student,attemptId,syncRevision,syncedRevision,liveSignature,calculatorSectionStarted}));$('#saveStatus').textContent='Progress saved on this browser.'}catch(e){storage=false;$('#saveStatus').textContent='Keep this tab open to retain your progress.'}try{localStorage.setItem(outboxKey,JSON.stringify(syncOutbox))}catch(e){}updateSyncStatus();if(syncOutbox.length&&!syncFlight&&!syncTimer)scheduleSync()}
 function answered(i){const a=answers[i],q=Q[i];return q.type==='number'?String(a).trim()!=='':q.type==='match'?a.every(v=>v!==''):a.length===q.a.length}
 function correct(i){const q=Q[i],a=answers[i];if(!answered(i))return false;if(q.type==='number')return /^\d+$/.test(String(a).trim())&&Number(a)===q.a;return JSON.stringify(q.type==='match'?a.map(Number):[...a].sort((x,y)=>x-y))===JSON.stringify(q.a)}
-function nav(){ $('#navigator').innerHTML=Q.map((q,i)=>`<button onclick="go(${i})" class="${answered(i)?'done ':''}${i===current?'current ':''}${flags[i]?'flagged':''}" aria-label="Question ${i+1}, ${answered(i)?'answered':'not complete'}${flags[i]?', marked for review':''}" ${i===current?'aria-current="step"':''}>${i+1}</button>`).join('');$('#count').textContent=answers.filter((_,i)=>answered(i)).length+' of 25 answered';$('#flag').setAttribute('aria-pressed',flags[current]);$('#flag').textContent=flags[current]?'⚑ Marked for review':'⚑ Mark for review';}
+function sectionLocked(i){return calculatorSectionStarted&&i<19&&!submitted}
+function nav(){ $('#navigator').innerHTML=Q.map((q,i)=>`<button onclick="go(${i})" class="${answered(i)?'done ':''}${i===current?'current ':''}${flags[i]?'flagged':''}" aria-label="Question ${i+1}, ${sectionLocked(i)?'locked, ':''}${answered(i)?'answered':'not complete'}${flags[i]?', marked for review':''}" ${i===current?'aria-current="step"':''} ${sectionLocked(i)?'disabled title="Calculator inactive section is locked"':''}>${i+1}</button>`).join('');$('#count').textContent=answers.filter((_,i)=>answered(i)).length+' of 25 answered';$('#flag').setAttribute('aria-pressed',flags[current]);$('#flag').textContent=flags[current]?'⚑ Marked for review':'⚑ Mark for review';}
+
 function board(kind){let m=kind.startsWith('multiply'),html='<table class="board" aria-label="'+esc(Q[current].desc)+'"><tbody>';if(m){html+='<tr><th>×</th>'+Array.from({length:10},(_,i)=>'<th>'+ (i+1)+'</th>').join('')+'</tr>';for(let r=1;r<=10;r++){html+='<tr><th>'+r+'</th>';for(let c=1;c<=10;c++){let blank=kind==='multiplyMissing'&&((r===4&&c===7)||(r===7&&c===4));html+=`<td class="${kind==='multiplyMissing'&&(r===7||c===7)?'shade ':''}${blank?'blank':''}" ${blank?'aria-label="blank"':''}>${blank?'?':r*c}</td>`}html+='</tr>'}}else{for(let r=0;r<10;r++){html+='<tr>';for(let c=0;c<10;c++){let n=r*10+c+(kind==='hundredsShade'?0:1),blank=kind==='hundredsMissing'&&[13,23,33,43].includes(n);html+=`<td class="${kind==='hundredsShade'&&c===2?'yellow ':''}${blank?'blank':''}">${blank?'?':n}</td>`}html+='</tr>'}}return html+'</tbody></table>'}
 function bike(){return '<svg width="34" height="28" viewBox="0 0 40 32" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="23" r="7"/><circle cx="32" cy="23" r="7"/><path d="M8 23 15 9 24 23H8l13-12 11 12-6-19h-5M11 8h9"/></g></svg>'}
 function tally(n){let svg='<svg width="240" height="40" viewBox="0 0 240 40" aria-hidden="true"><g stroke="#26343f" stroke-width="2.5">';for(let g=0;g<Math.floor(n/5);g++){for(let k=0;k<4;k++)svg+=`<path d="M${g*52+k*10+5} 5v28"/>`;svg+=`<path d="M${g*52} 10l42 17"/>`}for(let k=0;k<n%5;k++)svg+=`<path d="M${Math.floor(n/5)*52+k*10+5} 5v28"/>`;return svg+'</g></svg>'}
 function pictograph(title,rows,key,kind){return `<table class="graph" aria-label="${esc(Q[current].desc)}"><caption>${title}</caption><tbody>${rows.map(([name,n])=>`<tr><th scope="row">${name}</th><td>${kind==='tally'?tally(n):Array.from({length:n},()=>kind==='bikes'?bike():`<svg width="27" height="27" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="11" fill="${kind==='cookies'?'#b78b5d':'#25343e'}"/>${kind==='cookies'?'<g fill="#775332"><circle cx="10" cy="9" r="1.5"/><circle cx="18" cy="15" r="1.5"/><circle cx="10" cy="19" r="1.5"/></g>':'<circle cx="10" cy="9" r="3" fill="white"/>'}</svg>`).join('')}${n===0?'<span aria-label="no pictures shown">—</span>':''}</td></tr>`).join('')}</tbody></table>${key?`<div class="key">Key: 1 ${kind==='bikes'?'bike':kind==='cookies'?'cookie':'eye'} picture = ${key} students</div>`:''}`}
 function diagram(kind){if(kind.includes('multiply')||kind.includes('hundreds'))return board(kind);if(kind==='eyes')return pictograph('Eye Color',[['Brown',5],['Blue',3],['Green',6]],3,kind);if(kind==='bikes')return pictograph('Students Riding Bikes',[['Monday',3],['Tuesday',1],['Wednesday',5],['Thursday',0],['Friday',3]],4,kind);if(kind==='cookies')return pictograph('Favorite Cookie',[['Peanut butter',5],['Chocolate chip',4],['Ginger snap',2],['Animal cracker',3]],2,kind);if(kind==='tally')return pictograph('Video Game Points',[['Player 1',17],['Player 2',10],['Player 3',20]],0,kind);return `<svg role="img" aria-label="${esc(Q[current].desc)}" viewBox="0 0 480 300" style="width:100%;max-width:530px"><text x="255" y="23" text-anchor="middle" font-size="20">Goals Scored</text>${[0,2,4,6,8].map(n=>`<path d="M55 ${250-n*25}H455" stroke="#a9b5be"/><text x="40" y="${256-n*25}" font-size="17" text-anchor="end">${n}</text>`).join('')}${[6,4,6,5].map((n,i)=>`<rect x="${55+i*100}" y="${250-n*25}" width="100" height="${n*25}" fill="#afb8bf" stroke="#3a4c59"/><text x="${105+i*100}" y="275" text-anchor="middle" font-size="17">${['Mary','Erin','Pat','Andrew'][i]}</text>`).join('')}<path d="M55 50V250H455" stroke="#26343f" fill="none"/></svg>`}
 function groupImage(nums){return '<div class="groups" aria-hidden="true">'+nums.map(n=>'<div class="group">'+'<span class="dot"></span>'.repeat(n)+'</div>').join('')+'</div>'}
-function render(){const q=Q[current];$('#position').textContent='Question '+(current+1)+' of 25';$('#back').disabled=current===0;$('#next').textContent=current===24?'Review →':'Next →';let html=`<h1 class="prompt" style="font-size:inherit" tabindex="-1">${esc(q.p)}</h1>`;if(q.equation)html+=`<div class="equation">${esc(q.equation)}</div>`;if(q.diagram)html+=`<div class="diagram">${diagram(q.diagram)}</div>`;if(q.o){html+=`<p class="hint">${q.a.length>1?'Select three answers.':'Select one answer.'} Choose X out, then click an answer circle to mark it.</p><div class="choices" role="group" aria-label="Answer choices">`+q.o.map((v,i)=>`<div data-choice="${i}" class="choice ${crossed[current].includes(i)?'eliminated':''}"><label><span class="answer-bubble"><input name="answer" type="${q.a.length>1?'checkbox':'radio'}" value="${i}" onchange="selectAnswer(${i},this.checked)" ${answers[current].includes(i)?'checked':''} ${submitted?'disabled':''} aria-label="Choice ${String.fromCharCode(65+i)}${crossed[current].includes(i)?', crossed out':''}"><svg class="bubble-x" viewBox="0 0 28 28" aria-hidden="true"><path d="M6 6 22 22M22 6 6 22"/></svg></span><span class="letter">${String.fromCharCode(65+i)}.</span><span class="option">${q.groups?'<span class="sr-only">'+esc(v)+'</span>'+groupImage(q.groups[i]):esc(v)}</span></label></div>`).join('')+'</div>'}else if(q.type==='number'){html+=`<label for="numberAnswer" class="hint" style="display:block">Type your answer.</label><input id="numberAnswer" class="number" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]*" value="${esc(answers[current])}" oninput="answers[current]=this.value.replace(/[^0-9]/g,'');this.value=answers[current];save();nav()" ${submitted?'disabled':''}> <span>${q.unit}</span>`}else{html+='<p class="hint">Drag a choice into each box, or use the menus.</p><div class="tokens">'+q.tokens.map((v,i)=>`<div draggable="${!submitted}" ondragstart="event.dataTransfer.setData('text/plain','${i}')" class="token ${answers[current].includes(String(i))?'used':''}">${esc(v)}</div>`).join('')+'</div><div class="matches">'+q.targets.map((v,i)=>`<div class="drop" ondragover="event.preventDefault()" ondrop="event.preventDefault();matchAnswer(${i},event.dataTransfer.getData('text/plain'))"><strong>${esc(v)}</strong><select aria-label="Match for ${esc(v)}" onchange="matchAnswer(${i},this.value)" ${submitted?'disabled':''}><option value="">Choose an expression</option>${q.tokens.map((t,j)=>`<option value="${j}" ${String(answers[current][i])===String(j)?'selected':''}>${esc(t)}</option>`).join('')}</select></div>`).join('')+'</div>'}if(submitted)html+=`<div class="result"><strong>${correct(current)?'✓ Correct':'Review this question'}</strong><p>${esc(q.why)}</p></div>`;$('#content').innerHTML=html;restoreAnnotations();nav();save();updateCalculatorAvailability()}
-function go(i){liveStroke=null;if(i>24){review();return}if(i<0)return;stopSpeech();current=i;render();$('#content .prompt').focus();window.scrollTo({top:0,behavior:'instant'})}
+function render(){if(calculatorSectionStarted&&current<19&&!submitted)current=19;else if(!calculatorSectionStarted&&current>=19&&!submitted)current=18;const q=Q[current];$('#position').textContent='Question '+(current+1)+' of 25';$('#sectionState').textContent=current>=19?'Calculator active · Questions 20–25':'Calculator inactive · Questions 1–19';$('#back').disabled=current===0||(calculatorSectionStarted&&current===19&&!submitted);$('#next').textContent=current===24?'Review →':current===18&&!calculatorSectionStarted?'Finish section →':'Next →';let html=`<h1 class="prompt" style="font-size:inherit" tabindex="-1">${esc(q.p)}</h1>`;if(q.equation)html+=`<div class="equation">${esc(q.equation)}</div>`;if(q.diagram)html+=`<div class="diagram">${diagram(q.diagram)}</div>`;if(q.o){html+=`<p class="hint">${q.a.length>1?'Select three answers.':'Select one answer.'} Choose X out, then click an answer circle to mark it.</p><div class="choices" role="group" aria-label="Answer choices">`+q.o.map((v,i)=>`<div data-choice="${i}" class="choice ${crossed[current].includes(i)?'eliminated':''}"><label><span class="answer-bubble"><input name="answer" type="${q.a.length>1?'checkbox':'radio'}" value="${i}" onchange="selectAnswer(${i},this.checked)" ${answers[current].includes(i)?'checked':''} ${submitted?'disabled':''} aria-label="Choice ${String.fromCharCode(65+i)}${crossed[current].includes(i)?', crossed out':''}"><svg class="bubble-x" viewBox="0 0 28 28" aria-hidden="true"><path d="M6 6 22 22M22 6 6 22"/></svg></span><span class="letter">${String.fromCharCode(65+i)}.</span><span class="option">${q.groups?'<span class="sr-only">'+esc(v)+'</span>'+groupImage(q.groups[i]):esc(v)}</span></label></div>`).join('')+'</div>'}else if(q.type==='number'){html+=`<label for="numberAnswer" class="hint" style="display:block">Type your answer.</label><input id="numberAnswer" class="number" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]*" value="${esc(answers[current])}" oninput="answers[current]=this.value.replace(/[^0-9]/g,'');this.value=answers[current];save();nav()" ${submitted?'disabled':''}> <span>${q.unit}</span>`}else{html+='<p class="hint">Drag a choice into each box, or use the menus.</p><div class="tokens">'+q.tokens.map((v,i)=>`<div draggable="${!submitted}" ondragstart="event.dataTransfer.setData('text/plain','${i}')" class="token ${answers[current].includes(String(i))?'used':''}">${esc(v)}</div>`).join('')+'</div><div class="matches">'+q.targets.map((v,i)=>`<div class="drop" ondragover="event.preventDefault()" ondrop="event.preventDefault();matchAnswer(${i},event.dataTransfer.getData('text/plain'))"><strong>${esc(v)}</strong><select aria-label="Match for ${esc(v)}" onchange="matchAnswer(${i},this.value)" ${submitted?'disabled':''}><option value="">Choose an expression</option>${q.tokens.map((t,j)=>`<option value="${j}" ${String(answers[current][i])===String(j)?'selected':''}>${esc(t)}</option>`).join('')}</select></div>`).join('')+'</div>'}if(submitted)html+=`<div class="result"><strong>${correct(current)?'✓ Correct':'Review this question'}</strong><p>${esc(q.why)}</p></div>`;$('#content').innerHTML=html;restoreAnnotations();nav();save();updateCalculatorAvailability()}
+function go(i){liveStroke=null;if(i>24){review();return}if(i<0||sectionLocked(i))return;if(i>=19&&!calculatorSectionStarted&&!submitted){showCalculatorGate(i);return}stopSpeech();current=i;render();$('#content .prompt').focus();window.scrollTo({top:0,behavior:'instant'})}
 function selectAnswer(i,checked){if(submitted)return;const q=Q[current];answers[current]=q.a.length>1?(checked?[...answers[current].filter(v=>v!==i),i]:answers[current].filter(v=>v!==i)):[i];crossed[current]=crossed[current].filter(v=>v!==i);save();render();document.querySelector('input[value="'+i+'"]')?.focus()}
 function cross(i){if(crossed[current].includes(i))crossed[current]=crossed[current].filter(v=>v!==i);else{if(submitted&&answers[current].includes(i))return;answers[current]=answers[current].filter(v=>v!==i);crossed[current].push(i)}save();render()}
 function matchAnswer(i,v){if(submitted||!['','0','1','2','3'].includes(v))return;if(v!=='')answers[current]=answers[current].map(x=>x===v?'':x);answers[current][i]=v;render()}
@@ -112,13 +444,16 @@ function openModal(html){stopSpeech();$('#modalContent').innerHTML=html;if(!$('#
 function closeModal(){$('#modal').close()}
 function answerText(i){const q=Q[i],a=answers[i];if(q.type==='number')return a===''?'No answer':String(a);if(q.type==='match')return q.targets.map((t,j)=>t+' → '+(a[j]===''?'No match':q.tokens[Number(a[j])])).join('; ');return a.length?a.map(v=>String.fromCharCode(65+v)).join(', '):'No answer'}
 function keyText(q){if(q.type==='number')return String(q.a);if(q.type==='match')return q.targets.map((t,j)=>t+' → '+q.tokens[q.a[j]]).join('; ');return q.a.map(v=>String.fromCharCode(65+v)).join(', ')}
-function review(){if(submitted){results();return}const n=answers.filter((_,i)=>answered(i)).length;openModal(`<h2>Review your answers</h2><p>${n} of 25 questions are complete. ${25-n?'Choose a question to finish it, or submit when you are ready.':'You can check any question before you submit.'}</p><div class="reviewgrid">${Q.map((q,i)=>`<button class="${answered(i)?'':'missing'}" onclick="closeModal();go(${i})">${i+1}${flags[i]?' ⚑':''}<br>${answered(i)?'Answered':'Check'}</button>`).join('')}</div><p class="hint">⚑ = marked for review. Yellow = incomplete.</p><div class="dialogbuttons"><button onclick="closeModal()">Keep working</button><button class="primary" onclick="finish()">Submit practice</button></div>`)}
-function finish(){if(!sessionStarted||!validStudent(student.name,student.className)){closeModal();showStudentEntry();return}submitted=true;save();render();results();retryTeacherSync()}
+function review(){if(submitted){results();return}const active=calculatorSectionStarted,n=answers.slice(active?19:0,active?25:19).filter((_,j)=>answered(j+(active?19:0))).length;openModal(`<h2>Review ${active?'calculator':'calculator inactive'} section</h2><p>${n} of ${active?6:19} questions in this section are complete. ${active?'Questions 1–19 are locked. Check questions 20–25 before you submit.':'Check questions 1–19 before beginning the calculator section. You cannot return to them afterward.'}</p><div class="reviewgrid">${Q.map((q,i)=>!active&&i>=19?'':`<button class="${answered(i)?'':'missing'}" onclick="closeModal();go(${i})" ${sectionLocked(i)?'disabled':''}>${i+1}${flags[i]?' ⚑':''}<br>${sectionLocked(i)?'Locked':answered(i)?'Answered':'Check'}</button>`).join('')}</div><p class="hint">⚑ = marked for review. Yellow = incomplete.</p><div class="dialogbuttons"><button onclick="closeModal()">Keep working</button><button class="primary" onclick="${active?'finish()':'showCalculatorGate(19)'}">${active?'Submit practice':'Continue to calculator section'}</button></div>`)}
+function showCalculatorGate(target=19){const complete=Array.from({length:19},(_,i)=>answered(i)).filter(Boolean).length;openModal(`<h2>Begin the calculator section?</h2><p>You have answered <strong>${complete} of 19</strong> questions in the calculator inactive section.</p><p>When you continue, questions <strong>1–19 will be locked</strong>. You will not be able to return to them or change those answers, even if you refresh this page.</p><p>The calculator will be available for questions <strong>20–25</strong>.</p><div class="dialogbuttons"><button onclick="closeModal();review()">Review questions 1–19</button><button class="primary" onclick="beginCalculatorSection(${target})">Begin calculator section</button></div>`)}
+function beginCalculatorSection(target=19){if(!sessionStarted)return;calculatorSectionStarted=true;calcPress('C');closeModal();current=Math.max(19,Math.min(24,target));render();$('#content .prompt').focus();window.scrollTo({top:0,behavior:'instant'})}
+
+function finish(){if(!sessionStarted||!validStudent(student.name,student.className)){closeModal();showStudentEntry();return}if(!calculatorSectionStarted){showCalculatorGate(19);return}submitted=true;save();render();results();retryTeacherSync()}
 function results(){const score=Q.filter((q,i)=>correct(i)).length;openModal(`<h2>Practice complete</h2><p><strong>${esc(student.name)}</strong> · ${esc(student.className)}</p><div class="score">${score} / 25</div><p id="resultSyncStatus" role="status">${esc(syncMessage())}</p><p>${Math.round(score/25*100)}% correct. Read the explanations to learn from each question.</p>${Q.map((q,i)=>`<div class="result"><strong>${correct(i)?'✓':'○'} Question ${i+1}</strong><br>Your answer: ${esc(answerText(i))}<br>Correct answer: ${esc(keyText(q))}<p>${esc(q.why)}</p><button onclick="closeModal();go(${i})">View question ${i+1}</button></div>`).join('')}<div class="dialogbuttons"><button onclick="window.print()">Print results</button><button onclick="restartPrompt()">Start again</button><button class="primary" onclick="closeModal()">Close</button></div>`)}
 function restartPrompt(){openModal('<h2>Start a new practice?</h2><p>This clears the answers, highlights, drawings, and results and returns to the name and class screen.</p><div class="dialogbuttons"><button onclick="results()">Keep results</button><button class="primary" onclick="resetPractice()">Start again</button></div>')}
-function clearStudentWork(){calcPress('C');closeCalculator(false);attemptId=newAttemptId();syncRevision=0;syncedRevision=0;liveSignature='';syncError=false;answers=Q.map(q=>q.type==='match'?['','','','']:q.type==='number'?'':[]);flags=Array(25).fill(false);crossed=Q.map(()=>[]);submitted=false;current=0;annotations=Array.from({length:25},()=>[]);activeTool='select'}
+function clearStudentWork(){calculatorSectionStarted=false;calcPress('C');closeCalculator(false);attemptId=newAttemptId();syncRevision=0;syncedRevision=0;liveSignature='';syncError=false;answers=Q.map(q=>q.type==='match'?['','','','']:q.type==='number'?'':[]);flags=Array(25).fill(false);crossed=Q.map(()=>[]);submitted=false;current=0;annotations=Array.from({length:25},()=>[]);activeTool='select'}
 function resetPractice(){clearStudentWork();student={name:'',className:''};sessionStarted=false;closeModal();render();showStudentEntry()}
-function showHelp(){openModal('<h2>How to practice</h2><p>Choose an answer, type a number, or match the expressions. Your answers stay selected as you move between questions.</p><p><strong>Read aloud</strong> reads the question, describes its picture, and reads the answer choices. Use Pause, Resume, or Stop as needed. Sound uses the voice available on your device.</p><p>Use the question numbers to move around. Mark a question with a flag if you want to check it later. Use Review before submitting. Answers and explanations appear after submission.</p><p><strong>Highlight:</strong> drag across words to highlight them in yellow. On a touchscreen, select words and tap the highlighter icon. <strong>Draw:</strong> drag to circle, box, or write on the question. Choose a pen color if you like. Choose <strong>Answer</strong> to select answers again. <strong>X out:</strong> click an answer circle to place an X on it; click again to remove the X. Choose <strong>Answer</strong> to select an answer. <strong>Undo</strong> removes your last highlight or drawing; <strong>Clear marks</strong> clears only this question. Marks are saved with your progress.</p><p><strong>Calculator:</strong> available on questions 17–25. Click Calculator to open it. Drag its title to move it, and click × to close it. Use scratch paper for extra work. This is an unofficial practice activity.</p><div class="dialogbuttons"><button class="primary" onclick="closeModal()">Back to practice</button></div>')}
+function showHelp(){openModal('<h2>How to practice</h2><p>Choose an answer, type a number, or match the expressions. Your answers stay selected as you move between questions.</p><p><strong>Read aloud</strong> reads the question, describes its picture, and reads the answer choices. Use Pause, Resume, or Stop as needed. Sound uses the voice available on your device.</p><p>Use the question numbers to move around. Mark a question with a flag if you want to check it later. Use Review before finishing each section. Questions 1–19 lock when you begin the calculator section. Answers and explanations appear after submission.</p><p><strong>Highlight:</strong> drag across words to highlight them in yellow. On a touchscreen, select words and tap the highlighter icon. <strong>Draw:</strong> drag to circle, box, or write on the question. Choose a pen color if you like. Choose <strong>Answer</strong> to select answers again. <strong>X out:</strong> click an answer circle to place an X on it; click again to remove the X. Choose <strong>Answer</strong> to select an answer. <strong>Undo</strong> removes your last highlight or drawing; <strong>Clear marks</strong> clears only this question. Marks are saved with your progress.</p><p><strong>Calculator:</strong> available on questions 20–25. Click Calculator to open it. Drag its title to move it, and click × to close it. Use scratch paper for extra work. This is an unofficial practice activity.</p><div class="dialogbuttons"><button class="primary" onclick="closeModal()">Back to practice</button></div>')}
 let speechRun=0,speechActive=false,speechPaused=false,speechTimer=null;
 function sayMath(s){return String(s).replace(/\$/g,' dollars ').replace(/×/g,' times ').replace(/÷/g,' divided by ').replace(/−/g,' minus ').replace(/\+/g,' plus ').replace(/=/g,' equals ').replace(/\(/g,' open parenthesis ').replace(/\)/g,' close parenthesis ').replace(/\br\b/g,' r ').replace(/\bs\b/g,' s ').replace(/\bn\b/g,' n ')}
 function stopSpeech(){speechRun++;clearTimeout(speechTimer);speechActive=false;speechPaused=false;if('speechSynthesis'in window)speechSynthesis.cancel();$('#pause').textContent='Pause';$('#speechStatus').textContent=''}
@@ -184,10 +519,10 @@ function newAttemptId(){return window.crypto&&window.crypto.randomUUID?window.cr
 function liveConfigured(){return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(GOOGLE_SHEETS_URL)}
 function captureLiveUpdate(){
  if(!sessionStarted||!validStudent(student.name,student.className))return;
- const signature=JSON.stringify([student,answers,submitted]);
+ const signature=JSON.stringify([student,answers,submitted,calculatorSectionStarted]);
  if(signature===liveSignature)return;
  liveSignature=signature;syncRevision++;
- const payload={testId:'practiceA-6279743',site:LIVE_SITE,submissionId:attemptId,revision:syncRevision,status:submitted?'submitted':'in_progress',student:{...student},answers:JSON.parse(JSON.stringify(answers))};
+ const payload={testId:'practiceA-6279743-sections-v3',site:LIVE_SITE,submissionId:attemptId,revision:syncRevision,status:submitted?'submitted':'in_progress',student:{...student},answers:JSON.parse(JSON.stringify(answers))};
  const i=syncOutbox.findIndex(p=>p.submissionId===attemptId);if(i<0)syncOutbox.push(payload);else syncOutbox[i]=payload;
  scheduleSync();
 }
@@ -230,7 +565,7 @@ window.addEventListener('online',()=>retryTeacherSync());
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&liveConfigured()&&syncOutbox.length&&!syncFlight){const payload=syncOutbox[0];fetch(GOOGLE_SHEETS_URL,{method:'POST',mode:'no-cors',credentials:'omit',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(payload),keepalive:true}).catch(()=>{});}});
 
 
-function calculatorAllowed(){return current>=16&&current<25&&sessionStarted}
+function calculatorAllowed(){return calculatorSectionStarted&&current>=19&&current<25&&sessionStarted}
 function updateCalculatorAvailability(){const allowed=calculatorAllowed();$('#calculatorButton').hidden=!allowed;if(!allowed)closeCalculator(false)}
 function toggleCalculator(){if(!calculatorAllowed())return;const panel=$('#calculator');if(!panel.hidden){closeCalculator();return}panel.hidden=false;$('#calculatorButton').setAttribute('aria-expanded','true');updateCalcDisplay();keepCalculatorInView();panel.focus()}
 function closeCalculator(focus=true){$('#calculator').hidden=true;$('#calculatorButton').setAttribute('aria-expanded','false');if(focus&&!$('#calculatorButton').hidden)$('#calculatorButton').focus()}
